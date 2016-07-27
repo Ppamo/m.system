@@ -6,75 +6,79 @@ function TemplateTrans(profile) {
 
 	var readBuffer = [];
 	var writeBuffer = [];
-	var __dumpCounter = 0;
-	var __profile = profile;
-	var __socket = null;
-	var __currentMode = '';
-	var __currentStage = '';
+	var dumpCounter = 0;
+	var socket = null;
+	var currentMode = '';
+	var currentStage = '';
 
-	var __storeResponse = function(message){
-		var __client = new net.Socket();
-		__client.connect(__profile.realPort, __profile.host, function() {
+	var storeResponse = function(message){
+		var client = new net.Socket();
+		client.connect(profile.realPort, profile.host, function() {
 			for (var i = 0, len = message.length; i < len; i++){
 				console.log(':> ' + message[i].toString());
-				__client.write(message[i]);
+				client.write(message[i]);
 			};
 			readBuffer = [];
 		});
-		__client.on('data', function(data){
+		client.on('data', function(data){
 			console.log('<: ' + data.toString());
 			writeBuffer.push(data);
 		});
-		__client.on('close', function(){
+		client.on('close', function(){
 			console.log(':: closing client and writing buffer');
-			var fileName = ('0000' + __dumpCounter).slice(-4) + '-test-out.dmp';
+			var fileName = ('0000' + dumpCounter).slice(-4) + '-test-out.dmp';
 			mockTools.Utils.dumpBufferToFile(writeBuffer, fileName);
 		});
 	};
 
-	var __read = function(data){
+	var read = function(data){
 		if (!mockTools.Utils.isEmpty(data)){
 			readBuffer.push(data);
 			if (mockTools.Utils.normalize(data) === 'end'){
-				__dumpCounter++;
-				var fileName = ('0000' + __dumpCounter).slice(-4) + '-test-in.dmp';
+				dumpCounter++;
+				var fileName = ('0000' + dumpCounter).slice(-4) + '-test-in.dmp';
 				console.log('-> dumping file ' + fileName);
 				mockTools.Utils.dumpBufferToFile(readBuffer, fileName);
-				__storeResponse(readBuffer);
+				storeResponse(readBuffer);
 			}
 		}
 	};
 	
 
-	var __close = function(data){
-		console.log('closing port ' + __profile.port);
+	var close = function(data){
+		console.log('closing port ' + profile.port);
 	};
 	var start = function() {
-		__client = net.createServer(function(sock){
-			sock.on('data', __read);
-			sock.on('close', __close);
-		}).listen(__profile.port, __profile.host);
-		console.log('--> starting to port ' + __profile.port);
+		client = net.createServer(function(sock){
+			sock.on('data', read);
+			sock.on('close', close);
+		}).listen(profile.port, profile.host);
+		console.log('--> starting to port ' + profile.port);
 	};
 	var stop = function(){
-		if (__client) {
-			__client.close();
-			__client.destroy();
+		if (client) {
+			client.close();
 		}
 	};
 
-	var setMode = function(mode){
-		__currentMode = mode;
+	var update = function(setup){
+		if (setup.mode){
+			this.getConfig().mode  = setup.mode;
+		};
+		if (setup.stage){
+			this.getConfig().stage = setup.stage;
+		};
+		return this.getConfig();
 	};
 
-	var setStage = function(stage){
-		__currentStage = stage;
+	var getConfig = function(){
+		return profile;
 	};
 
 	return {
 		start: start,
 		stop: stop,
-		setMode: setMode,
-		setStage: setStage
+		update: update,
+		getConfig: getConfig
 	};
 }
