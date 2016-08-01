@@ -1,4 +1,5 @@
 {
+	"workingDir": "/tmp/mock-server",
 	"control":{
 		"host": "0.0.0.0",
 		"port": 8080
@@ -17,8 +18,16 @@
 		"host": "0.0.0.0",
 		"port": 10003,
 		"realPort": 20003,
-		"type": "custom",
-		"mode": "recording",
+		"type": "other",
+		"mode": "playing",
+		"stage": "default"
+	},{
+		"name": "asearch",
+		"host": "0.0.0.0",
+		"port": 10004,
+		"realPort": 20004,
+		"type": "other",
+		"mode": "other",
 		"stage": "default"
 	}]
 }

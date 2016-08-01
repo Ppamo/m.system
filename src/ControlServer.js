@@ -17,8 +17,14 @@ var controlServer = (function(){
 
 		controlServer.service.route({
 			method: 'POST',
-			path: '/update',
-			handler: setup.updateHandler
+			path: '/config',
+			handler: setup.configHandler
+		});
+
+		controlServer.service.route({
+			method: 'GET',
+			path: '/config',
+			handler: setup.configHandler
 		});
 
 		controlServer.service.start((err) => {
