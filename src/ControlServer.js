@@ -31,14 +31,12 @@ var controlServer = (function(){
 			if (err){
 				throw err;
 			};
-			console.log('Control Service Running at: ' + controlServer.service.info.uri);
+			console.log('control service running at: ' + controlServer.service.info.uri);
 		});
 	};
 	
 	var stopService = function(setup){
-		console.log('---> stop control server: ');
-		console.log(controlServer);
-		console.log(controlServer.service);
+		console.log('stoping control service');
 		controlServer.service.stop();
 	};
 

@@ -16,21 +16,49 @@ function TemplateTrans(profile) {
 	};
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
+	
+	function generateResponse(profile, buffer){
+		// if buffer is nothing read the data from stored message
+		if (buffer) {
+			try {
+				for (var i = 0, len = buffer.length; i < len; i++){
+					socket.write(buffer[i]);
+				};
+				socket.end();
+			} catch(err) {
+				console.log('=> exception writing to response connection', err);
+			} finally {
+				writeBuffer = [];
+			};
+		} else {
+			mockTools.Utils.loadStoredMessage(profile, function(err, data){
+				console.log('writing back:', data.toString());
+				if (err) {
+					console.log(err);
+					return ;
+				};
+				try {
+					socket.write(data);
+					socket.end();
+				} catch (err) {
+					console.log('=> exception writing to response connection', err);
+				};
+			});
+		}
+	};
 
 	function handleIncomingMessage(profile, readBuffer){
-		console.log('handling message mode: ', profile.mode, '; stage: ', profile.stage);
+		console.log('handling message mode:', profile.mode, '- stage:', profile.stage);
 		profile.currentCounter++;
 		mockTools.Utils.storeIncomingMessage(profile, readBuffer, function(){
-			console.log('--> el mensaje de entrada debe ya estar guardado en el disco');
-			console.log('ejecutando modo:', profile.mode);
 			switch(profile.mode){
 				case 'recording':
-					getAndStoreResponse(profile, readBuffer, function(){
-						 console.log('--> la respuesta del servicio real debe estar ya guardada en el disco'); 
+					getAndStoreResponse(profile, readBuffer, function(buffer){
+						generateResponse(profile, writeBuffer);
 					});
 					break;
 				case 'playing':
-					mockTools.Utils.loadStoredMessage(profile);
+					generateResponse(profile);
 					break;
 				default:
 					throw new Error('Non-valid mode ' + profile.mode);
@@ -51,7 +79,6 @@ function TemplateTrans(profile) {
 			writeBuffer.push(data);
 		});
 		client.on('close', function(){
-			console.log('--> el mensaje ha sido reenviado, se procede a guardarlo');
 			mockTools.Utils.storeOutgoingMessage(profile, writeBuffer, success);
 		});
 	};
@@ -73,13 +100,12 @@ function TemplateTrans(profile) {
 			readBuffer.push(data);
 			if (isEOF(data)) {
 				handleIncomingMessage(profile, readBuffer);
-				socket.end();
 			};
 		}
 	};
 
 	var close = function(data){
-		console.log('closing port ' + profile.port);
+		// console.log('closing port ' + profile.port);
 	};
 
 	var start = function() {
@@ -88,7 +114,6 @@ function TemplateTrans(profile) {
 			s.on('close', close);
 			socket = s;
 		}).listen(profile.port, profile.host);
-		console.log('--> starting to port ' + profile.port);
 	};
 
 	var stop = function(){
@@ -101,7 +126,8 @@ function TemplateTrans(profile) {
 		if (setup){
 			if (setup.mode){
 				if (mockTools.Utils.validateMode(setup.mode)){
-					profile.mode  = setup.mode;
+					profile.mode = setup.mode;
+					profile.currentCounter = 0;
 				}
 			};
 			if (setup.stage){

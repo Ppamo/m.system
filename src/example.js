@@ -38,12 +38,11 @@ for (var i = 0, len = config.roles.length; i < len; i++){
 	profile = config.roles[i];
 	profile.workingDir = config.workingDir;
 	profile.success = function(server) {
-		console.log('created ' + this.name);
+		console.log('created ' + this.name + 'at ' + this.port);
 	};
 	profile.error = function(e) {
 		console.log('error creating ' + this.name);
 	};
-	console.log('creating service ' + profile.name);
 
 	service.factory.create(profile);
 }

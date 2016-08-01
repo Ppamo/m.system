@@ -34,13 +34,14 @@ var Utils = (function () {
 		storeMessage(profile, buffer, success, false);
 	};
 
-	var loadStoredMessage = function(profile, outgoing){
+	var loadStoredMessage = function(profile, success, outgoing){
 		if (typeof(outgoing) == 'undefined'){
 			outgoing = true;
 		};
 		var filename = getFilePath(profile, !outgoing);
-		
-		return require(filename);
+		fs.readFile(filename, function(err, data){
+			success(err, data);
+		});
 	};
 
 	var isEmpty = function(data){
