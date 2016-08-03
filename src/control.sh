@@ -41,7 +41,19 @@ case "$1" in
 		echo
 		;;
 	hit)
-		MSG="cmd:test\nsubject:1\nend\n"
+		case "$2" in
+			1)
+				MSG="cmd:get_account_ads2\nads_quantity:500\naccount_id:1693703\npage_number:0\nall_ad_params:1\ncommit:1\nend\n"
+				;;
+			2)
+				MSG="newline:0A\ncommit:1\nad_id:36248711\ncmd:admail\nmail_type:half_time\nend\n"
+				;;
+			3)
+				MSG="end\n"
+				;;
+			*)
+				MSG="cmd:test\nsubject:1\nend\n"
+		esac
 		printf "$MSG"
 		printf "$MSG" | nc localhost $MOCK_TRANS_PORT
 		;;
