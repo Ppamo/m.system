@@ -2,8 +2,11 @@ exports = module.exports = TemplateTrans;
 
 function TemplateTrans(profile) {
 	var net = require('net');
+	var pass = require('stream').PassThrough;
 	var streamFactory = require('./MockStream.js');
 	var mockTools = require('./MockServerUtil.js');
+	var mock = new net.Server();
+	var trans = new net.Socket();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// Constructor
@@ -30,27 +33,53 @@ function TemplateTrans(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var read = function(data){
-		if (!mockTools.Utils.isEmpty(data)){
-			stream.data(data);
-			if (isEOF(data)) {
-				stream.eof();
-			};
-		}
-	};
-
 	var close = function(data){
-		// console.log('closing port ' + profile.port);
-		stream.close()
-		profile.currentCounter++;
-		stream = streamFactory(profile);
+		console.log('closing port ' + profile.port);
 	};
 
 	var start = function() {
-		client = net.createServer(function(s){
-			s.on('data', read);
-			s.on('close', close);
-		}).listen(profile.port, profile.host);
+		console.log('creating a connection at port', profile.port);
+		mock.listen(profile.port, profile.host, function(){
+			console.log('trans mock server listening at', profile.port);
+		});
+		mock.on('connection', function(socket){
+			console.log('get a new socket!');
+			var buffer = [];
+			// setup streams
+			var a = new pass();
+			var b = new pass();
+			var c = new pass();
+			var x = new pass();
+			var y = new pass();
+			var z = new pass();
+
+			a.pipe(b);
+			a.pipe(c);
+			x.pipe(y);
+			x.pipe(z);
+			b.on('data', function(data){
+				// write file
+				console.log('writing to file 1:', data.toString());
+			});
+			c.on('data', function(data){
+				// forwarding message to trans
+				buffer.push(data);
+				if (isEOF(data)){
+					trans.connect(profile.realPort, profile.host, function(){
+						for (i = 0, len = buffer.length; i < len; i++){
+							trans.write(buffer[i]);
+						}
+					});
+					trans.pipe(x);
+				}
+			});
+			y.on('data', function(data){
+				// write file
+				console.log('writing to file 2:', data.toString());
+			});
+			socket.pipe(a);
+			z.pipe(socket);
+		});
 	};
 
 	var stop = function(){
