@@ -48,7 +48,12 @@ int main(int argc, char **argv) {
 	struct hostent *hostp;
 	struct stat stat_buf;
 	char buffer_in[BUFFERSIZE], buffer_out[BUFFERSIZE], file_path[128];
-	char *hostaddrp, *stage="stage01";
+	char *hostaddrp, *stage;
+
+	if (argc != 2){
+		error("0> ERROR stage does not defined");
+	}
+	stage = argv[1];
 
 	// setup server
 	fd_parent = socket(AF_INET, SOCK_STREAM, 0);

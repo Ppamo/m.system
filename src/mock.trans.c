@@ -43,8 +43,14 @@ int main(int argc, char **argv) {
 	struct sockaddr_in server_addr, client_addr, trans_addr;
 	struct hostent *hostp, *trans;
 	char buffer_in[BUFFERSIZE], buffer_out[BUFFERSIZE], file_path[128];
-	char *hostaddrp, *stage="stage01";
+	char *hostaddrp, *stage;
 	FILE *fd_in, *fd_out;
+
+	if (argc != 2){
+		error("0> ERROR stage does not defined");
+	}
+	stage = argv[1];
+	printf("0> stage; %s\n", stage);
 
 	fd_parent = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd_parent < 0) {
