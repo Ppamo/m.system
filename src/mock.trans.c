@@ -9,9 +9,6 @@
 #include <arpa/inet.h>
 
 #define BUFFERSIZE 1024
-#define PORT 10005
-#define TRANSHOST "localhost"
-#define TRANSPORT 20005
 
 void error(char *msg) {
 	perror(msg);
@@ -43,14 +40,18 @@ int main(int argc, char **argv) {
 	struct sockaddr_in server_addr, client_addr, trans_addr;
 	struct hostent *hostp, *trans;
 	char buffer_in[BUFFERSIZE], buffer_out[BUFFERSIZE], file_path[128];
-	char *hostaddrp, *stage;
+	char *hostaddrp, *stage, *trans_host;
 	FILE *fd_in, *fd_out;
+	int mock_port, trans_port;
 
-	if (argc != 2){
-		error("0> ERROR stage does not defined");
+	if (argc != 5){
+		error("0> ERROR not enough parameters");
 	}
-	stage = argv[1];
-	printf("0> stage; %s\n", stage);
+	mock_port = atoi(argv[1]);
+	trans_host = argv[2];
+	trans_port = atoi(argv[3]);
+	stage = argv[4];
+	printf("0> tunnel: %i:%s:%i - stage: %s\n", mock_port, trans_host, trans_port, stage);
 
 	fd_parent = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd_parent < 0) {
@@ -61,7 +62,7 @@ int main(int argc, char **argv) {
 	bzero((char *) &server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons((unsigned short)PORT);
+	server_addr.sin_port = htons((unsigned short)mock_port);
 
 	if (bind(fd_parent, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
 		error("0> ERROR on binding");
@@ -74,13 +75,13 @@ int main(int argc, char **argv) {
 	fd_trans = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd_trans < 0)
 		error ("0> ERROR creating trans socket");
-	trans = gethostbyname(TRANSHOST);
+	trans = gethostbyname(trans_host);
 	if (trans == NULL)
 		error("0> ERROR trans host not found");
 	bzero((char *) &trans_addr, sizeof(trans_addr));
 	trans_addr.sin_family = AF_INET;
 	bcopy((char *)trans->h_addr, (char *)&trans_addr.sin_addr.s_addr, trans->h_length);
-	trans_addr.sin_port = htons(TRANSPORT);
+	trans_addr.sin_port = htons(trans_port);
 	n = connect(fd_trans, (struct sockaddr *)&trans_addr, sizeof(trans_addr));
 	if (n < 0)
 		error("0> ERROR connecting to trans");

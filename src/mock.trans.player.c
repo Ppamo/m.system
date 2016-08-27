@@ -13,8 +13,6 @@
 
 #define BUFFERSIZE 1024
 #define PORT 10005
-#define TRANSHOST "localhost"
-#define TRANSPORT 20005
 
 void error(char *msg) {
 	perror(msg);
@@ -43,17 +41,19 @@ int main(int argc, char **argv) {
 	static const char *base_path="/tmp/mock-server/trans";
 	int optval = 1, n, reading = 1, connection_counter;
 	off_t sendfile_offset;
-	int fd, fd_parent, fd_child, clientlen;
+	int fd, fd_parent, fd_child, clientlen, mock_port;
 	struct sockaddr_in server_addr, client_addr;
 	struct hostent *hostp;
 	struct stat stat_buf;
 	char buffer_in[BUFFERSIZE], buffer_out[BUFFERSIZE], file_path[128];
 	char *hostaddrp, *stage;
 
-	if (argc != 2){
-		error("0> ERROR stage does not defined");
+	if (argc != 3){
+		error("0> ERROR not enough parameters");
 	}
-	stage = argv[1];
+	mock_port = atoi(argv[1]);
+	stage = argv[2];
+	printf("0> tunnel: %i - stage: %s\n", mock_port, stage);
 
 	// setup server
 	fd_parent = socket(AF_INET, SOCK_STREAM, 0);
