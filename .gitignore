@@ -1,1 +1,3 @@
 .*.swp
+src/mock.controller
+node_modules

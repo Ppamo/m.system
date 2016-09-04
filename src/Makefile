@@ -1,3 +1,2 @@
 all:
-	gcc -o mock.player mock.trans.player.c
-	gcc -o mock.recorder mock.trans.c
+	gcc -o mock.controller -lcrypto  mock.trans.c
