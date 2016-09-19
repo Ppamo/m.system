@@ -16,7 +16,6 @@
 #include <openssl/md5.h>
 
 #define BUFFERSIZE 1024
-#define FTOKPATH "/home/jenkins"
 
 struct shared_data {
 	int recording;
@@ -74,12 +73,12 @@ int is_eom(char *message){
 	return 0;
 }
 
-struct shared_data *get_shmem(){
+struct shared_data *get_shmem(const char *base_path){
 	key_t key;
 	int shmid;
 	struct shared_data *data_ptr;
 
-	if ((key = ftok(FTOKPATH, 'R')) == -1) {
+	if ((key = ftok(base_path, 'R')) == -1) {
 		error("ERROR creating shared memmory key");
 	}
 
@@ -144,8 +143,8 @@ int main(int argc, char **argv) {
 	FILE *fd_in, *fd_out;
 	int mock_port, trans_port;
 
-	static const char *base_path="/tmp/mock-server/trans";
-	struct shared_data *shmem_data = get_shmem();
+	const char *base_path=getenv("HOME");
+	struct shared_data *shmem_data = get_shmem(base_path);
 
 	// arguments list
 	// set stage "stage name"
