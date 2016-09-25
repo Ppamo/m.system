@@ -61,7 +61,7 @@ var Utils = (function () {
 	};
 
 	var validateMode = function(mode){
-		var modes = ['playing', 'recording'];
+		var modes = ['playing', 'recording', 'static'];
 		return (modes.indexOf(mode) != -1);
 	};
 
