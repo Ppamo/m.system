@@ -1,16 +1,60 @@
 {
-	"roles":
-	[{
-		"name": "trans",
+	"workingDir": "/home/pablo/.mock.data",
+	"control":{
 		"host": "0.0.0.0",
-		"port": 10005,
-		"realPort": 20005,
-		"type": "trans"
-	},{
-		"name": "memcached",
+		"port": 8080
+	},
+	"roles": [{
+		"name": "mc_widget",
 		"host": "0.0.0.0",
-		"port": 10003,
-		"realPort": 20003,
-		"type": "custom"
+		"port": 21665,
+		"type": "json_api",
+		"mode": "static",
+		"stage": "develop",
+		"ssl": {
+			"tls": {
+				"keyFilePath": "/home/pablo/code/yapo.cl/regress_final/conf/server.key",
+				"certFilePath": "/home/pablo/code/yapo.cl/regress_final/conf/server.crt"
+			}
+		},
+		"static": {
+			"rules": [{
+				"method": "GET",
+				"path": "/api/v1.1/api/users/{uuid}/counter",
+				"reply": "counter"
+			},{
+				"method": "GET",
+				"path": "/api/v1.1/api/users/{uuid}/inboxes",
+				"reply": "inboxes.10"
+			},{
+				"method": "GET",
+				"path": "/api/v1.1/api/users/{uuid}/block",
+				"reply": "block"
+			},{
+				"method": "GET",
+				"path": "/api/v1.1/api/users/{uuid}/inboxes/{conversation_id}",
+				"reply": "conversation.test_01"
+			},{
+				"method": "GET",
+				"path": "/api/v1.1/api/users/{uuid}/block/{uuid_other}",
+				"reply": "block_user.01"
+			},{
+				"method": "POST",
+				"path": "/api/v1.1/api/users/{uuid}/block/{uuid_other}",
+				"reply": "block_user.post.01"
+			},{
+				"method": "DELETE",
+				"path": "/api/v1.1/api/users/{uuid}/block/{uuid_other}",
+				"reply": "unblock_user.delete.01"
+			},{
+				"method": "DELETE",
+				"path": "/api/v1.1/api/users/{uuid}/inboxes/{conversation_id}",
+				"reply": "delete.conversation.01"
+			},{
+				"method": "GET",
+				"path": "/api/get_ads_list_data",
+				"reply": "get_ads_list_data"
+			}]
+		}
 	}]
 }

@@ -1,0 +1,4 @@
+.*.swp
+src/mock.controller
+node_modules
+**mock.log

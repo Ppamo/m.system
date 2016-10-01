@@ -1,19 +1,3 @@
-/*
-var profile = (function (){
-	var trans = function(node) {
-		console.log("creating a trans mock!!");
-		bind = function(){
-			console.log("bind trans!");
-		};
-	}
-	return {
-		trans: trans
-	};
-})();
-*/
-
-
-
 var factory = (function () {
 	var services = [];
 
@@ -27,22 +11,10 @@ var factory = (function () {
 			}
 			var template = require(path);
 			var server = template(profile);
-			server.bind();
+			server.start();
 			services.push(server);
 			profile.success(server);
 		});
-
-
-		/*
-		if (fs.existsSync(path)) {
-			console.log("file " + path + "exists!")
-			var template = require(path);
-			console.log(template);
-			console.log("create instance");
-			var server = template();
-		}
-		*/
-
 		return null;
 	}
 	return {

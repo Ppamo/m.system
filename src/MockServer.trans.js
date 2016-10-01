@@ -2,86 +2,117 @@ exports = module.exports = TemplateTrans;
 
 function TemplateTrans(profile) {
 	var net = require('net');
-	var fs = require('fs');
+	var pass = require('stream').PassThrough;
+	var streamFactory = require('./MockStream.js');
+	var mockTools = require('./MockServerUtil.js');
+	var mock = new net.Server();
+	var trans = new net.Socket();
 
-	var readBuffer = [];
-	var writeBuffer = [];
-	var dumpCounter = 0;
-	var __profile = profile;
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// Constructor
 
-	var dumpBufferToFile = function(readBuffer, file) {
-		var ws = fs.createWriteStream('/tmp/dump/' + file);
-		for (var i = 0, len = readBuffer.length; i < len; i++){
-			ws.write(readBuffer[i]);
-		};
-		ws.end();
+	profile.currentCounter = 0;
+	var stream = streamFactory(profile);
+
+	mockTools.Utils.ensurePath(profile);
+	if (! mockTools.Utils.validateMode(profile.mode)){
+		profile.mode = 'playing';
 	};
 
-	var isEOF = function(data) {
-		return (normalize(data) === 'end');
-	};
-
-	var isEmpty = function(data){
-		return (data.toString().trim().length == 0);
-	};
-
-	var normalize = function(data){
-		var message = data.toString();
-		if (message.charCodeAt(message.length - 1) == 10){
-			message = message.substring(0, message.length - 1);
-		}
-		if (message.charCodeAt(message.length - 1) == 13){
-			message = message.substring(0, message.length - 1);
-		}
-		 return message;
-	};
-
-	var getResponse = function(message){
-		var client = new net.Socket();
-		client.connect(__profile.realPort, __profile.host, function() {
-			for (var i = 0, len = message.length; i < len; i++){
-				console.log(':> ' + message[i].toString());
-				client.write(message[i]);
-			};
-			readBuffer = [];
-		});
-		client.on('data', function(data){
-			console.log('<: ' + data.toString());
-			writeBuffer.push(data);
-		});
-		client.on('close', function(){
-			console.log(':: closing client and writing buffer');
-			var fileName = ('0000' + dumpCounter).slice(-4) + '-test-out.dmp';
-			dumpBufferToFile(writeBuffer, fileName);
-		});
-	};
-
-	var read = function(data){
-		if (!isEmpty(data)){
-			readBuffer.push(data);
-			if (isEOF(data)){
-				dumpCounter++;
-				var fileName = ('0000' + dumpCounter).slice(-4) + '-test-in.dmp';
-				console.log('-> dumping file ' + fileName);
-				dumpBufferToFile(readBuffer, fileName);
-				getResponse(readBuffer);
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	
+	function isEOF(data){
+		var message = data.toString().split('\n');
+		for (var i = 0,len = message.length; i < len; i++){
+			if (message[i].replace('\r', '') === 'end'){
+				return true;
 			}
 		}
-	};
-	
-	var close = function(data){
-		console.log('closing port ' + __profile.port);
+		return false;
 	};
 
-	var bind = function() {
-		net.createServer(function(sock){
-			sock.on('data', read);
-			sock.on('close', close);
-		}).listen(__profile.port, __profile.host);
-		console.log('--> binding to port ' + __profile.port);
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var close = function(data){
+		console.log('closing port ' + profile.port);
+	};
+
+	var start = function() {
+		console.log('creating a connection at port', profile.port);
+		mock.listen(profile.port, profile.host, function(){
+			console.log('trans mock server listening at', profile.port);
+		});
+		mock.on('connection', function(socket){
+			console.log('get a new socket!');
+			var buffer = [];
+			// setup streams
+			var a = new pass();
+			var b = new pass();
+			var c = new pass();
+			var x = new pass();
+			var y = new pass();
+			var z = new pass();
+
+			a.pipe(b);
+			a.pipe(c);
+			x.pipe(y);
+			x.pipe(z);
+			b.on('data', function(data){
+				// write file
+				console.log('writing to file 1:', data.toString());
+			});
+			c.on('data', function(data){
+				// forwarding message to trans
+				buffer.push(data);
+				if (isEOF(data)){
+					trans.connect(profile.realPort, profile.host, function(){
+						for (i = 0, len = buffer.length; i < len; i++){
+							trans.write(buffer[i]);
+						}
+					});
+					trans.pipe(x);
+				}
+			});
+			y.on('data', function(data){
+				// write file
+				console.log('writing to file 2:', data.toString());
+			});
+			socket.pipe(a);
+			z.pipe(socket);
+		});
+	};
+
+	var stop = function(){
+		if (client) {
+			client.close();
+		}
+	};
+
+	var config = function(setup){
+		if (setup){
+			if (setup.mode){
+				if (mockTools.Utils.validateMode(setup.mode)){
+					profile.mode = setup.mode;
+					profile.currentCounter = 0;
+				}
+			};
+			if (setup.stage){
+				profile.stage = setup.stage;
+				mockTools.Utils.ensurePath(profile);
+				profile.currentCounter = 0;
+			};
+		};
+		return this.getConfig();
+	};
+
+	var getConfig = function(){
+		return JSON.parse(JSON.stringify(profile));
 	};
 
 	return {
-		bind: bind 
+		start: start,
+		stop: stop,
+		config: config,
+		getConfig: getConfig
 	};
 }
