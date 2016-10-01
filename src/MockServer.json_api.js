@@ -33,7 +33,7 @@ function TemplateJSON(profile) {
 	};
 
   var getReplyPathPrefix = function(reply){
-    return (profile.workingDir + "/" + profile.mode + "/" + profile.stage + "/" + reply);
+    return (profile.workingDir + "/" + profile.name + "/" + profile.mode + "/" + profile.stage + "/" + reply);
   }
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
