@@ -48,20 +48,17 @@ function TemplateJSON(profile) {
        }
     }
     var replyPrefix = getReplyPathPrefix(rule.reply);
+	  var output = reply(fs.readFileSync(replyPrefix + ".out"));
     // load the headers
-    /*
     var headers = fs.readFileSync(replyPrefix + ".headers.out");
     headers = headers.toString().split('\n');
     for (var i = 0, len = headers.length - 1; i < len; i++) {
       var index = headers[i].indexOf(":");
-      reply().header(headers[i].substring(0, index), headers[i].substring(index + 1, headers[i].length)).hold();
+      output.header(
+           headers[i].substring(0, index),
+           headers[i].substring(index + 1, headers[i].length));
     }
-    */
-
-    // rule.reply has the file to be loaded
-	  return reply(fs.readFileSync(replyPrefix + ".out"))
-        .header("Content-Type", "application/json; charset=utf-8")
-        .header("X-SCM-API-Version", "11");
+    return output;
   }
 
 		mock.start((err) => {
