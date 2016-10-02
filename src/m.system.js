@@ -2,6 +2,8 @@ var config = require('./config.json');
 var service = require('./ServerFactory.js');
 var control = require('./ControlServer.js');
 
+// - - - - - - - - - - - - - - - - - - - - - - -
+
 // create control service
 config.control.stopHandler = function(request, reply){
 	var mockService = null;
@@ -14,6 +16,9 @@ config.control.stopHandler = function(request, reply){
 	reply('{"ok": true}');
 	control.server.stop();
 };
+
+// - - - - - - - - - - - - - - - - - - - - - - -
+
 config.control.configHandler = function(request, reply){
 	var response = {};
 	var updated = null;
@@ -27,7 +32,12 @@ config.control.configHandler = function(request, reply){
 	};
 	reply(response);
 };
+
+// - - - - - - - - - - - - - - - - - - - - - - -
+
 control.server.start(config.control);
+
+// - - - - - - - - - - - - - - - - - - - - - - -
 
 // create server
 var node = null;
