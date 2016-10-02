@@ -1,44 +1,28 @@
 exports = module.exports = TemplateJSON;
 
 function TemplateJSON(profile) {
-	var fs = require('fs');
-	var mockTools = require('./MockServerUtil.js');
-	var Hapi = require('hapi');
+	var fs = require("fs");
+	var mockTools = require("./MockServerUtil.js");
+	var Hapi = require("hapi");
 	var mock = new Hapi.Server();
-	if (profile.ssl != null){
-		var tls = {
-			key: fs.readFileSync(profile.ssl.tls.keyFilePath),
-			cert: fs.readFileSync(profile.ssl.tls.certFilePath)
-		};
-		mock.connection({
-			host: profile.host,
-			port: profile.port,
-			tls: tls
-		});
-	} else {
-		mock.connection({
-			host: profile.host,
-			port: profile.port
-		});
-	}
-	// handle CORS
-	var HapiCors = require('hapi-cors-headers');
-	mock.ext('onPreResponse', HapiCors);
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 	// Constructor
 	profile.currentCounter = 0;
 	mockTools.Utils.ensurePath(profile);
 	if (! mockTools.Utils.validateMode(profile.mode)){
-		profile.mode = 'play';
+		profile.mode = "play";
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var getReplyPathPrefix = function(reply){
 		return (profile.workingDir + "/" + profile.name + "/" + profile.mode + "/" + profile.stage + "/" + reply);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
-	var defaultStaticHandler = function(request, reply) {
+
+	var defaultStaticHandler = function(request, reply){
 		console.log("handling", request.route.method, request.route.path);
 		var rule = null;
 		// get the rule
@@ -52,60 +36,126 @@ function TemplateJSON(profile) {
 		var output = reply(fs.readFileSync(replyPrefix + ".out"));
 		// load the headers
 		var headers = fs.readFileSync(replyPrefix + ".headers.out");
-		headers = headers.toString().split('\n');
+		headers = headers.toString().split("\n");
 		for (var i = 0, len = headers.length - 1; i < len; i++) {
 			var index = headers[i].indexOf(":");
 			output.header(
-					 headers[i].substring(0, index),
-					 headers[i].substring(index + 1, headers[i].length));
+				headers[i].substring(0, index),
+				headers[i].substring(index + 1, headers[i].length));
 		}
 		return output;
 	}
 
-		mock.start((err) => {
-			if (err){
-				throw err;
-			};
-			console.log('started server ' + profile.name + ' (' + profile.type + ') running at: ' + mock.info.uri);
-		});
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var start = function() {
-		console.log('creating server ' + profile.name + ' (' + profile.type + '), at port ' +	profile.port);
+	var killMock = function(){
+		if (mock) {
+			mock.close();
+		}
+	}
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var startMock = function(){
+		var tls;
+		if (profile.ssl != null){
+			tls = {
+				key: fs.readFileSync(profile.ssl.tls.keyFilePath),
+				cert: fs.readFileSync(profile.ssl.tls.certFilePath)
+			}
+		}
+		mock.connection({
+			host: profile.host,
+			port: profile.port,
+			tls: tls
+		});
+
+		// handle CORS
+		var HapiCors = require("hapi-cors-headers");
+		mock.ext("onPreResponse", HapiCors);
+
+		mock.start((err) => {
+			if (err){
+				console.log("\033[31m");
+				console.log("unable to start " + profile.name + " (" + profile.type + ")");
+				console.error(err.message);
+				console.log("\033[0m");
+				return;
+			};
+			console.log("started server " + profile.name + " (" + profile.type + ") running at: " + mock.info.uri);
+		});
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var loadStaticRules = function(){
+		var rule, handler;
+		if (! profile.static){
+			return;
+		}
 		for (var i = 0, len = profile.static.rules.length; i < len; i++) {
-			console.log("adding route:", profile.static.rules[i].method, profile.static.rules[i].path);
+			rule = profile.static.rules[i];
+			console.log("adding route:", rule.method, rule.path);
+			handler = (rule.handler) ? rule.handler : defaultStaticHandler;
 			mock.route({
-				method: profile.static.rules[i].method,
-				path: profile.static.rules[i].path,
-				handler: defaultStaticHandler
+				method: rule.method,
+				path: rule.path,
+				handler: handler
 			});
+		}
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var start = function(){
+		console.log("creating server " + profile.name + " (" + profile.type + "), at port " +	profile.port);
+		startMock();
+		switch(profile.mode){
+				case "static":
+						loadStaticRules();
+					break;
 		}
 	};
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var stop = function(){
-		if (client) {
-			client.close();
-		}
+		killMock();
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var setMode = function(mode){
+		if (! mockTools.Utils.validateMode(setup.mode)){
+			throw new Error("Mode " + mode + "not valid");
+		}
+		profile.mode = setup.mode;
+		profile.currentCounter = 0;
+		switch(mode){
+			case "static":
+					loadStaticRoutes();
+				break;
+		}
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var setStage = function(stage){
+		profile.stage = setup.stage;
+		mockTools.Utils.ensurePath(profile);
+		profile.currentCounter = 0;
+	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var config = function(setup){
 		if (setup){
 			if (setup.mode){
-				if (mockTools.Utils.validateMode(setup.mode)){
-					profile.mode = setup.mode;
-					profile.currentCounter = 0;
-				}
+				setMode(setup.mode);
 			};
 			if (setup.stage){
-				profile.stage = setup.stage;
-				mockTools.Utils.ensurePath(profile);
-				profile.currentCounter = 0;
+				setStage(setup.stage);
 			};
 		};
 		return this.getConfig();
@@ -119,7 +169,7 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	return {
+	return{
 		start: start,
 		stop: stop,
 		config: config,
