@@ -16,7 +16,7 @@ function TemplateTrans(profile) {
 
 	mockTools.Utils.ensurePath(profile);
 	if (! mockTools.Utils.validateMode(profile.mode)){
-		profile.mode = 'playing';
+		profile.mode = 'play';
 	};
 
 	// - - - - - - - - - - - - - - - - - - - - - - -

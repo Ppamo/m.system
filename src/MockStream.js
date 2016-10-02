@@ -19,18 +19,26 @@ function MockStream(profile) {
 
 	var net = require('net');
 	var fs = require('fs');
-	// var file = fs.createWriteStream(getFilePath(profile, false));
+
+	// - - - - - - - - - - - - - - - - - - - - - -
 
 	var data = function(data){
 		console.log('> streaming data:', data.toString());
-		// file.write(data);
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - -
+
 	var close = function(){
 		console.log('> closing streams');
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - -
+
 	var eof = function(){
 		console.log('> EOF');
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - -
 
 	return {
 		data: data,

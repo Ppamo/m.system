@@ -2,6 +2,8 @@ var Utils = (function () {
 	var fs = require('fs');
 	var path = require('path');
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var getFilePath = function(profile, incoming){
 		if (typeof(incoming) == 'undefined'){
 			incoming = true;
@@ -11,6 +13,8 @@ var Utils = (function () {
 
 		return path.join(profile.workingDir, profile.name, profile.stage, filename);
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var storeMessage = function(profile, buffer, success, incoming) {
 		if (typeof(incoming) == 'undefined'){
@@ -26,13 +30,19 @@ var Utils = (function () {
 		ws.end();
 	};
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var storeIncomingMessage = function(profile, buffer, success){
 		storeMessage(profile, buffer, success, true);
 	};
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var storeOutgoingMessage = function(profile, buffer, success){
 		storeMessage(profile, buffer, success, false);
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var loadStoredMessage = function(profile, success, outgoing){
 		if (typeof(outgoing) == 'undefined'){
@@ -44,9 +54,13 @@ var Utils = (function () {
 		});
 	};
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var isEmpty = function(data){
 		return (data.toString().trim().length == 0);
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var ensurePath = function(profile){
 		var fullpath = path.resolve(path.normalize(path.join(profile.workingDir, profile.name, profile.stage)));
@@ -60,10 +74,14 @@ var Utils = (function () {
 		};
 	};
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var validateMode = function(mode){
-		var modes = ['playing', 'recording', 'static'];
+		var modes = ['play', 'record', 'static'];
 		return (modes.indexOf(mode) != -1);
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	return {
 		isEmpty: isEmpty,
