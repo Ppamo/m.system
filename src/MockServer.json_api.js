@@ -23,11 +23,11 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var defaultStaticHandler = function(request, reply){
-		console.log("handling", request.route.method, request.route.path);
-		var rule = null;
-		// get the rule
-		for (var i = 0, len = profile.static.rules.length; i < len; i++) {
-			rule = profile.static.rules[i];
+		console.log(profile.name, "handle", request.route.method, request.route.path);
+		var rule;
+		// get the rule from the route
+		for (var i = 0, len = profile.rules.static.length; i < len; i++) {
+			rule = profile.rules.static[i];
 			if (rule.method.toLowerCase() == request.route.method.toLowerCase() && rule.path == request.route.path){
 				break;
 			 }
@@ -46,34 +46,32 @@ function TemplateJSON(profile) {
 		return output;
 	}
 
-
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var killMock = function(){
 		if (mock) {
-			mock.close();
+			console.log("stoping ", profile.name, "server");
+			mock.stop();
 		}
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var startMock = function(){
-		var tls;
-		if (profile.ssl != null){
-			tls = {
-				key: fs.readFileSync(profile.ssl.tls.keyFilePath),
-				cert: fs.readFileSync(profile.ssl.tls.certFilePath)
-			}
+		// check the tls configutation
+		var tls = profile.connection.tls;
+		if (!tls.key && tls.keyPath){
+			tls.key = fs.readFileSync(tls.keyPath);
 		}
-		mock.connection({
-			host: profile.host,
-			port: profile.port,
-			tls: tls
-		});
+		if (!tls.cert && tls.certPath){
+			tls.cert = fs.readFileSync(tls.certPath);
+		}
+
+		// connect the server
+		mock.connection(profile.connection);
 
 		// handle CORS
-		var HapiCors = require("hapi-cors-headers");
-		mock.ext("onPreResponse", HapiCors);
+		mock.ext("onPreResponse", require("hapi-cors-headers"));
 
 		mock.start((err) => {
 			if (err){
@@ -90,18 +88,16 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var loadStaticRules = function(){
-		var rule, handler;
-		if (! profile.static){
+		var route, rules = profile.rules.static;
+		if (!rules){
 			return;
 		}
-		for (var i = 0, len = profile.static.rules.length; i < len; i++) {
-			rule = profile.static.rules[i];
-			console.log("adding route:", rule.method, rule.path);
-			handler = (rule.handler) ? rule.handler : defaultStaticHandler;
+		for (var i = 0, len = rules.length; i < len; i++) {
+			console.log("adding route:", rules[i].method, rules[i].path);
 			mock.route({
-				method: rule.method,
-				path: rule.path,
-				handler: handler
+				method: rules[i].method,
+				path: rules[i].path,
+				handler: (rules[i].handler) ? rules[i].handler : defaultStaticHandler
 			});
 		}
 	}
