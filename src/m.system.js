@@ -1,6 +1,7 @@
-var config = require('./config.json');
-var service = require('./ServerFactory.js');
-var control = require('./ControlServer.js');
+var config = require("./config.json");
+var service = require("./ServerFactory.js");
+var control = require("./ControlServer.js");
+var tools = require("./MockServerUtil.js");
 
 // - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -48,10 +49,11 @@ for (var i = 0, len = config.roles.length; i < len; i++){
 	profile = config.roles[i];
 	profile.workingDir = config.workingDir;
 	profile.success = function(server) {
-		console.log('created ' + this.name + ' at ' + this.port);
+		console.log("created " + this.name + " at "
+				+ this.connection.host + ":" + this.connection.port);
 	};
 	profile.error = function(e) {
-		console.log('error creating ' + this.name);
+		tools.Utils.error("error creating " + this.name, profile, e);
 	};
 
 	service.factory.create(profile);

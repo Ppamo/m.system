@@ -2,22 +2,17 @@ exports = module.exports = TemplateJSON;
 
 function TemplateJSON(profile) {
 	var fs = require("fs");
-	var mockTools = require("./MockServerUtil.js");
+	var tools = require("./MockServerUtil.js");
 	var Hapi = require("hapi");
 	var mock = new Hapi.Server();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
-	// Constructor
-	profile.currentCounter = 0;
-	mockTools.Utils.ensurePath(profile);
-	if (! mockTools.Utils.validateMode(profile.mode)){
-		profile.mode = "play";
-	};
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var getReplyPathPrefix = function(reply){
-		return (profile.workingDir + "/" + profile.name + "/" + profile.mode + "/" + profile.stage + "/" + reply);
+		return (profile.workingDir + "/" + profile.name + "/"
+				+ profile.mode + "/" + profile.stage + "/" + reply);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -28,7 +23,8 @@ function TemplateJSON(profile) {
 		// get the rule from the route
 		for (var i = 0, len = profile.rules.static.length; i < len; i++) {
 			rule = profile.rules.static[i];
-			if (rule.method.toLowerCase() == request.route.method.toLowerCase() && rule.path == request.route.path){
+			if (rule.method.toLowerCase() == request.route.method.toLowerCase()
+					&& rule.path == request.route.path){
 				break;
 			 }
 		}
@@ -75,13 +71,12 @@ function TemplateJSON(profile) {
 
 		mock.start((err) => {
 			if (err){
-				console.log("\033[31m");
-				console.log("unable to start " + profile.name + " (" + profile.type + ")");
-				console.error(err.message);
-				console.log("\033[0m");
+				// tools.Utils.error("unable to start ", profile, err);
+				profile.error(err);
 				return;
 			};
-			console.log("started server " + profile.name + " (" + profile.type + ") running at: " + mock.info.uri);
+			console.log("started server " + profile.name
+				+ " (" + profile.type + ") running at: " + mock.info.uri);
 		});
 	}
 
@@ -105,7 +100,8 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var start = function(){
-		console.log("creating server " + profile.name + " (" + profile.type + "), at port " +	profile.port);
+		console.log("creating server " + profile.name
+				+ " (" + profile.type + "), at port " +	profile.connection.port);
 		startMock();
 		switch(profile.mode){
 				case "static":
@@ -123,7 +119,7 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var setMode = function(mode){
-		if (! mockTools.Utils.validateMode(setup.mode)){
+		if (!tools.Utils.validateMode(setup.mode)){
 			throw new Error("Mode " + mode + "not valid");
 		}
 		profile.mode = setup.mode;
@@ -138,8 +134,11 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var setStage = function(stage){
-		profile.stage = setup.stage;
-		mockTools.Utils.ensurePath(profile);
+		if (typeof(stage) == "undefined"){
+			stage = "default";
+		}
+		profile.stage = stage;
+		tools.Utils.ensurePath(profile);
 		profile.currentCounter = 0;
 	}
 
@@ -162,6 +161,15 @@ function TemplateJSON(profile) {
 	var getConfig = function(){
 		return JSON.parse(JSON.stringify(profile));
 	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+	// Constructor
+	profile.currentCounter = 0;
+	setStage(profile.stage);
+	if (!tools.Utils.validateMode(profile.mode)){
+		profile.mode = "play";
+	};
+	tools.Utils.ensurePath(profile);
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -17,7 +17,6 @@ var factory = (function () {
 			services.push(server);
 			profile.success(server);
 		});
-		return null;
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -

@@ -83,6 +83,19 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var printError = function(message, profile, error){
+		console.log("\033[31m" + message, profile.name + " (" + profile.type + ")");
+		if (error && error.message){
+			console.error(error.message, "\033[0m");
+		} else if(error) {
+			console.error(error, "\033[0m");
+		} else {
+			console.error("\033[0m");
+		}
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	return {
 		isEmpty: isEmpty,
 		ensurePath: ensurePath,
@@ -90,7 +103,8 @@ var Utils = (function () {
 		loadStoredMessage: loadStoredMessage,
 		storeMessage: storeMessage,
 		storeIncomingMessage: storeIncomingMessage,
-		storeOutgoingMessage: storeOutgoingMessage
+		storeOutgoingMessage: storeOutgoingMessage,
+		error: printError
 	};
 })();
 
