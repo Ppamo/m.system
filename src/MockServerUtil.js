@@ -63,7 +63,14 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var ensurePath = function(profile){
-		var fullpath = path.resolve(path.normalize(path.join(profile.workingDir, profile.name, profile.stage)));
+		var fillpath;
+		if (profile.mode == "static"){
+			fullpath = path.resolve(path.normalize(path.join(profile.workingDir,
+						profile.name, profile.mode, profile.stage)));
+		} else {
+			fullpath = path.resolve(path.normalize(path.join(profile.workingDir,
+						profile.name, profile.stage)));
+		}
 		var nodes = fullpath.split(path.sep);
 		fullpath = '/';
 		for (var i = 1, len = nodes.length; i < len; i++){
@@ -83,15 +90,15 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var printError = function(message, profile, error){
-		console.log("\033[31m" + message, profile.name + " (" + profile.type + ")");
-		if (error && error.message){
-			console.error(error.message, "\033[0m");
-		} else if(error) {
-			console.error(error, "\033[0m");
-		} else {
-			console.error("\033[0m");
-		}
+	var printError = function(profile, message, error){
+		var args = [ "\033[31m" + profile.name + ":", message]
+		console.log.apply(null, args);
+		console.log(error.message, "\033[0m");
+	}
+
+	var printMessage = function (profile, message){
+		arguments[0] = profile.name + ":";
+		console.log.apply(null, arguments);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -104,7 +111,8 @@ var Utils = (function () {
 		storeMessage: storeMessage,
 		storeIncomingMessage: storeIncomingMessage,
 		storeOutgoingMessage: storeOutgoingMessage,
-		error: printError
+		error: printError,
+		debug: printMessage
 	};
 })();
 

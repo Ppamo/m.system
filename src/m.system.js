@@ -53,7 +53,7 @@ for (var i = 0, len = config.roles.length; i < len; i++){
 				+ this.connection.host + ":" + this.connection.port);
 	};
 	profile.error = function(e) {
-		tools.Utils.error("error creating " + this.name, profile, e);
+		tools.Utils.error(profile, "error creating " + this.name, e);
 	};
 
 	service.factory.create(profile);

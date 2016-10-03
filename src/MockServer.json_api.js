@@ -8,8 +8,6 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	// - - - - - - - - - - - - - - - - - - - - - - -
-
 	var getReplyPathPrefix = function(reply){
 		return (profile.workingDir + "/" + profile.name + "/"
 				+ profile.mode + "/" + profile.stage + "/" + reply);
@@ -18,7 +16,8 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var defaultStaticHandler = function(request, reply){
-		console.log(profile.name, "handle", request.route.method, request.route.path);
+		tools.Utils.debug(profile, "static handler for",
+				request.route.method.toUpperCase(), request.route.path);
 		var rule;
 		// get the rule from the route
 		for (var i = 0, len = profile.rules.static.length; i < len; i++) {
@@ -44,10 +43,24 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var killMock = function(){
+	var defaultStaticHandler = function(request, reply){
+		tools.Utils.debug(profile, "recording",
+				request.route.method.toUpperCase(), request.route.path);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var killMock = function(options){
+		var restart = (options && options.restart) ? options.restart : false ;
 		if (mock) {
-			console.log("stoping ", profile.name, "server");
-			mock.stop();
+			tools.Utils.debug(profile, "stoping ", profile.name, "server");
+			mock.stop({timeout: 1000}, (err) => {
+				tools.Utils.debug(profile, "server stoped");
+				if (restart){
+					mock = new Hapi.Server();
+					start();
+				}
+			});
 		}
 	}
 
@@ -71,12 +84,11 @@ function TemplateJSON(profile) {
 
 		mock.start((err) => {
 			if (err){
-				// tools.Utils.error("unable to start ", profile, err);
 				profile.error(err);
 				return;
 			};
-			console.log("started server " + profile.name
-				+ " (" + profile.type + ") running at: " + mock.info.uri);
+			tools.Utils.debug(profile, "started", profile.type,
+				"server, running at", mock.info.uri);
 		});
 	}
 
@@ -88,7 +100,8 @@ function TemplateJSON(profile) {
 			return;
 		}
 		for (var i = 0, len = rules.length; i < len; i++) {
-			console.log("adding route:", rules[i].method, rules[i].path);
+			tools.Utils.debug(profile, "adding route:",
+					rules[i].method.toUpperCase(), rules[i].path);
 			mock.route({
 				method: rules[i].method,
 				path: rules[i].path,
@@ -100,12 +113,12 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var start = function(){
-		console.log("creating server " + profile.name
-				+ " (" + profile.type + "), at port " +	profile.connection.port);
+		tools.Utils.debug(profile, "creating", profile.type,
+				"server, at port", profile.connection.port);
 		startMock();
 		switch(profile.mode){
 				case "static":
-						loadStaticRules();
+					loadStaticRules();
 					break;
 		}
 	};
@@ -119,16 +132,15 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var setMode = function(mode){
-		if (!tools.Utils.validateMode(setup.mode)){
-			throw new Error("Mode " + mode + "not valid");
+		if (!tools.Utils.validateMode(mode)){
+			tools.Utils.error(profile, "Mode " + mode + "not valid", "Could not set mode");
+			return;
 		}
-		profile.mode = setup.mode;
+		tools.Utils.debug(profile, "setting mode to", mode);
+		profile.mode = mode;
 		profile.currentCounter = 0;
-		switch(mode){
-			case "static":
-					loadStaticRoutes();
-				break;
-		}
+		tools.Utils.ensurePath(profile);
+		killMock({restart: true});
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -137,6 +149,7 @@ function TemplateJSON(profile) {
 		if (typeof(stage) == "undefined"){
 			stage = "default";
 		}
+		tools.Utils.debug(profile, "setting stage to", stage);
 		profile.stage = stage;
 		tools.Utils.ensurePath(profile);
 		profile.currentCounter = 0;
