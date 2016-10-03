@@ -103,6 +103,42 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var writeStream = function(filePath, data){
+		fs.writeFile(filePath, data, "utf-8");
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var getRequestDumpPath = function(profile){
+		var filename = ("0000" + profile.currentCounter).slice(-4) + "-data.req";
+		return path.join(profile.workingDir, profile.name, profile.stage, filename);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var getResponseDumpPath = function(profile){
+		var filename = ("0000" + profile.currentCounter).slice(-4) + "-data.res";
+		return path.join(profile.workingDir, profile.name, profile.stage, filename);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var dumpJsonRequest = function(profile, data){
+		var filename = getRequestDumpPath(profile);
+		printMessage(profile, "writing file", filename);
+		writeStream(filename, JSON.stringify(data));
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var dumpJsonResponse = function(profile, data){
+		var filename = getResponseDumpPath(profile);
+		printMessage(profile, "writing file", filename);
+		writeStream(filename, JSON.stringify(data));
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	return {
 		isEmpty: isEmpty,
 		ensurePath: ensurePath,
@@ -112,7 +148,9 @@ var Utils = (function () {
 		storeIncomingMessage: storeIncomingMessage,
 		storeOutgoingMessage: storeOutgoingMessage,
 		error: printError,
-		debug: printMessage
+		debug: printMessage,
+		dumpJsonRequest: dumpJsonRequest,
+		dumpJsonResponse: dumpJsonResponse
 	};
 })();
 

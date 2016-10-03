@@ -43,9 +43,18 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var defaultStaticHandler = function(request, reply){
+	var requestRecorder = function(request, reply){
 		tools.Utils.debug(profile, "recording",
-				request.route.method.toUpperCase(), request.route.path);
+				request.method.toUpperCase(), request.path);
+		profile.currentCounter++;
+		var dump = {
+			headers: request.headers,
+			method: request.method,
+			path: request.path,
+			payload: request.payload
+		};
+		tools.Utils.dumpJsonRequest(profile, dump);
+		return reply();
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -112,6 +121,17 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var setRecordingRule = function(){
+		tools.Utils.debug(profile, "setting recording rule");
+		mock.route({
+			method: "*",
+			path: "/{path*}",
+			handler: requestRecorder
+		});
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var start = function(){
 		tools.Utils.debug(profile, "creating", profile.type,
 				"server, at port", profile.connection.port);
@@ -119,6 +139,9 @@ function TemplateJSON(profile) {
 		switch(profile.mode){
 				case "static":
 					loadStaticRules();
+					break;
+				case "record":
+					setRecordingRule();
 					break;
 		}
 	};
