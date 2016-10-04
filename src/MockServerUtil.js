@@ -103,38 +103,62 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var writeStream = function(filePath, data){
-		fs.writeFile(filePath, data, "utf-8");
+	var writeStream = function(filePath, data, callback){
+		fs.writeFile(filePath, data, "utf-8", callback);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var getRequestDumpPath = function(profile){
-		var filename = ("0000" + profile.currentCounter).slice(-4) + "-data.req";
+	var getPath = function(profile, tag, ext){
+		tag = (typeof(tag) == "undefined") ? "data" : tag.replace(/ /g, "_");
+		ext = (typeof(ext) == "undefined") ? ".dat" : ext;
+		var filename = ("0000" + profile.currentCounter).slice(-4) + "-" + tag + ext;
 		return path.join(profile.workingDir, profile.name, profile.stage, filename);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var getResponseDumpPath = function(profile){
-		var filename = ("0000" + profile.currentCounter).slice(-4) + "-data.res";
-		return path.join(profile.workingDir, profile.name, profile.stage, filename);
+	var getRequestDumpPath = function(profile, tag){
+		return getPath(profile, tag, ".req");
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var getResponseDumpPath = function(profile, tag){
+		return getPath(profile, tag, ".res");
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var dumpJsonRequest = function(profile, data){
 		var filename = getRequestDumpPath(profile);
-		printMessage(profile, "writing file", filename);
-		writeStream(filename, JSON.stringify(data));
+		var callback = function(err){
+			if (err) printError(profile, "could not dump request", err);
+			else printMessage(profile, "file wroted", filename);
+		};
+		writeStream(filename, JSON.stringify(data), callback);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var dumpJsonResponse = function(profile, data){
 		var filename = getResponseDumpPath(profile);
-		printMessage(profile, "writing file", filename);
-		writeStream(filename, JSON.stringify(data));
+		var callback = function(err){
+			if (err) printError(profile, "could not dump response", err);
+			else printMessage(profile, "file wroted", filename);
+		};
+		writeStream(filename, JSON.stringify(data), callback);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var createDumpStream = function(profile, tag){
+		var filename = getResponseDumpPath(profile, tag);
+		var ws = fs.createWriteStream(filename);
+		ws.on("finish", function() {
+					printMessage(profile, "stream closed", filename);
+				});
+		return ws;
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -150,7 +174,8 @@ var Utils = (function () {
 		error: printError,
 		debug: printMessage,
 		dumpJsonRequest: dumpJsonRequest,
-		dumpJsonResponse: dumpJsonResponse
+		dumpJsonResponse: dumpJsonResponse,
+		createDumpStream: createDumpStream
 	};
 })();
 

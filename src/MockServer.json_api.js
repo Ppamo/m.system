@@ -4,6 +4,7 @@ function TemplateJSON(profile) {
 	var fs = require("fs");
 	var tools = require("./MockServerUtil.js");
 	var Hapi = require("hapi");
+	var http = require("http");
 	var mock = new Hapi.Server();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -48,13 +49,32 @@ function TemplateJSON(profile) {
 				request.method.toUpperCase(), request.path);
 		profile.currentCounter++;
 		var dump = {
-			headers: request.headers,
-			method: request.method,
 			path: request.path,
+			method: request.method,
+			headers: request.headers,
 			payload: request.payload
 		};
 		tools.Utils.dumpJsonRequest(profile, dump);
-		return reply();
+		// get response from real server
+		var options = {
+			host: profile.server.host,
+			port: profile.server.port,
+			path: request.path,
+			method: request.method
+		};
+		var callback = function(response) {
+				var ws = tools.Utils.createDumpStream(profile, "body");
+				ws.on("finish", function(){
+						reply(fs.readFileSync(ws.path));
+					});
+				response.pipe(ws);
+				var dump = {
+					headers: response.headers,
+					statusCode: response.statusCode
+				};
+				tools.Utils.dumpJsonResponse(profile, dump);
+			};
+		http.request(options, callback).end();
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
