@@ -48,10 +48,14 @@ function TemplateJSON(profile) {
 		tools.Utils.debug(profile, "recording",
 				request.method.toUpperCase(), request.path);
 		profile.currentCounter++;
+		var headers = [];
+		for (var key in request.headers){
+				headers.push({key: request.headers[key]});
+		}
 		var dump = {
 			path: request.path,
 			method: request.method,
-			headers: request.headers,
+			headers: headers,
 			payload: request.payload
 		};
 		tools.Utils.dumpJsonRequest(profile, dump);
@@ -63,18 +67,54 @@ function TemplateJSON(profile) {
 			method: request.method
 		};
 		var callback = function(response) {
-				var ws = tools.Utils.createDumpStream(profile, "body");
+				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
 				ws.on("finish", function(){
 						reply(fs.readFileSync(ws.path));
 					});
 				response.pipe(ws);
+				// save the response's centextual data
+				var headers = [];
+				for (var key in response.headers){
+					headers.push({key: key, value: response.headers[key]});
+				}
 				var dump = {
-					headers: response.headers,
+					headers: headers,
 					statusCode: response.statusCode
 				};
 				tools.Utils.dumpJsonResponse(profile, dump);
 			};
+		// make the fuking request!
 		http.request(options, callback).end();
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var requestPlayer = function(request, reply){
+		tools.Utils.debug(profile, "playing",
+				request.method, request.path);
+		var rule, header;
+
+		// get the index rule
+		for (var i = 0, len = profile.rules.play.length; i < len; i++) {
+			rule = profile.rules.play[i];
+			if (rule.method.toLowerCase() == request.method.toLowerCase()
+					&& rule.path == request.path){
+				break;
+			 }
+		}
+
+		// prepare the response
+		profile.currentCounter = rule.index;
+
+		// get the response body
+		var dumpPath = tools.Utils.getResponseDumpPath(profile);
+		var dump = JSON.parse(fs.readFileSync(dumpPath));
+		var replyObj = reply(tools.Utils.getResponseDumpStream(profile, false, "body"));
+		for (var i = 0, len = dump.headers.length - 1; i < len; i++) {
+			header = dump.headers[i];
+			replyObj.header(header.key, header.value);
+		}
+		replyObj.code(dump.statusCode);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -111,7 +151,7 @@ function TemplateJSON(profile) {
 		// handle CORS
 		mock.ext("onPreResponse", require("hapi-cors-headers"));
 
-		mock.start((err) => {
+		mock.start(function (err){
 			if (err){
 				profile.error(err);
 				return;
@@ -152,6 +192,33 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var loadPlayerRules = function(){
+		// load json from dump file
+		var dump, dumpPath;
+		profile.rules.play = [];
+		profile.currentCounter = 1;
+		tools.Utils.debug(profile, "loading rules from stage", profile.stage);
+		while (tools.Utils.requestDumpExists(profile)){
+			dumpPath = tools.Utils.getRequestDumpPath(profile);
+			dump = JSON.parse(fs.readFileSync(dumpPath));
+			profile.rules.play.push({
+				index: profile.currentCounter,
+				method: dump.method,
+				path: dump.path
+			});
+			tools.Utils.debug(profile, "loading rule", profile.currentCounter,
+					dump.method, dump.path);
+			profile.currentCounter++;
+		}
+		mock.route({
+			method: "*",
+			path: "/{path*}",
+			handler: requestPlayer
+		});
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var start = function(){
 		tools.Utils.debug(profile, "creating", profile.type,
 				"server, at port", profile.connection.port);
@@ -163,6 +230,8 @@ function TemplateJSON(profile) {
 				case "record":
 					setRecordingRule();
 					break;
+				case "play":
+					loadPlayerRules();
 		}
 	};
 

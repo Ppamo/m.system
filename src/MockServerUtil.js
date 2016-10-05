@@ -21,7 +21,6 @@ var Utils = (function () {
 			incoming = true;
 		};
 		var filename = getFilePath(profile, incoming);
-		console.log('writing file: ', filename);
 		var ws = fs.createWriteStream(filename);
 		ws.on('finish', success);
 		for (var i = 0, len = buffer.length; i < len; i++){
@@ -113,7 +112,25 @@ var Utils = (function () {
 		tag = (typeof(tag) == "undefined") ? "data" : tag.replace(/ /g, "_");
 		ext = (typeof(ext) == "undefined") ? ".dat" : ext;
 		var filename = ("0000" + profile.currentCounter).slice(-4) + "-" + tag + ext;
-		return path.join(profile.workingDir, profile.name, profile.stage, filename);
+		return path.join(getWorkingPath(profile), filename);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var requestDumpExists = function(profile, tag){
+		return fs.existsSync(getRequestDumpPath(profile, tag));
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var responseDumpExists = function(profile, tag){
+		return fs.existsSync(getResponseDumpPath(profile, tag));
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var getWorkingPath = function(profile){
+		return path.join(profile.workingDir, profile.name, profile.stage);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -152,9 +169,14 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var createDumpStream = function(profile, tag){
-		var filename = getResponseDumpPath(profile, tag);
-		var ws = fs.createWriteStream(filename);
+	var getResponseDumpStream = function(profile, write, tag){
+		var ws, filename = getResponseDumpPath(profile, tag);
+		write = (typeof(write) == "undefined") ? true : write;
+		if (write){
+			ws = fs.createWriteStream(filename);
+		} else {
+			ws = fs.createReadStream(filename);
+		}
 		ws.on("finish", function() {
 					printMessage(profile, "stream closed", filename);
 				});
@@ -175,7 +197,12 @@ var Utils = (function () {
 		debug: printMessage,
 		dumpJsonRequest: dumpJsonRequest,
 		dumpJsonResponse: dumpJsonResponse,
-		createDumpStream: createDumpStream
+		getResponseDumpStream: getResponseDumpStream,
+		getWorkingPath: getWorkingPath,
+		getRequestDumpPath: getRequestDumpPath,
+		getResponseDumpPath: getResponseDumpPath,
+		requestDumpExists: requestDumpExists,
+		responseDumpExists: responseDumpExists
 	};
 })();
 
