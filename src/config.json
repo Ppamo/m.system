@@ -1,5 +1,5 @@
 {
-	"workingDir": "/home/pablo/.mock.data",
+	"workingDir": "",
 	"control":{
 		"host": "0.0.0.0",
 		"port": 8080
@@ -9,14 +9,18 @@
 		"type": "json_api",
 		"connection": {
 			"host": "0.0.0.0",
-			"port": 21665,
+			"port": ,
 			"tls": {
-				"keyPath": "/home/pablo/code/yapo.cl/regress_final/conf/server.key",
-				"certPath": "/home/pablo/code/yapo.cl/regress_final/conf/server.crt"
+				"keyPath": "/regress_final/conf/server.key",
+				"certPath": "/regress_final/conf/server.crt"
 			}
 		},
-		"mode": "static",
-		"stage": "develop",
+		"server": {
+			"host": "localhost",
+			"port": 
+		},
+		"mode": "play",
+		"stage": "default",
 		"rules":{
 			"static": [{
 					"method": "GET",
