@@ -1,6 +1,9 @@
-var config = require('./config.json');
-var service = require('./ServerFactory.js');
-var control = require('./ControlServer.js');
+var config = require("./config.json");
+var service = require("./ServerFactory.js");
+var control = require("./ControlServer.js");
+var tools = require("./MockServerUtil.js");
+
+// - - - - - - - - - - - - - - - - - - - - - - -
 
 // create control service
 config.control.stopHandler = function(request, reply){
@@ -14,6 +17,9 @@ config.control.stopHandler = function(request, reply){
 	reply('{"ok": true}');
 	control.server.stop();
 };
+
+// - - - - - - - - - - - - - - - - - - - - - - -
+
 config.control.configHandler = function(request, reply){
 	var response = {};
 	var updated = null;
@@ -27,7 +33,12 @@ config.control.configHandler = function(request, reply){
 	};
 	reply(response);
 };
+
+// - - - - - - - - - - - - - - - - - - - - - - -
+
 control.server.start(config.control);
+
+// - - - - - - - - - - - - - - - - - - - - - - -
 
 // create server
 var node = null;
@@ -38,10 +49,11 @@ for (var i = 0, len = config.roles.length; i < len; i++){
 	profile = config.roles[i];
 	profile.workingDir = config.workingDir;
 	profile.success = function(server) {
-		console.log('created ' + this.name + ' at ' + this.port);
+		console.log("created " + this.name + " at "
+				+ this.connection.host + ":" + this.connection.port);
 	};
 	profile.error = function(e) {
-		console.log('error creating ' + this.name);
+		tools.Utils.error(profile, "error creating " + this.name, e);
 	};
 
 	service.factory.create(profile);
