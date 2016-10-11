@@ -5,9 +5,7 @@ var configPath = "./config.json";
 
 if (process.argv.length == 3){
 	configPath = process.argv[2];
-	console.log(process.argv);
 }
-console.log(configPath);
 var config = require(configPath);
 
 // - - - - - - - - - - - - - - - - - - - - - - -
