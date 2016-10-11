@@ -1,7 +1,14 @@
-var config = require("./config.json");
 var service = require("./ServerFactory.js");
 var control = require("./ControlServer.js");
 var tools = require("./MockServerUtil.js");
+var configPath = "./config.json";
+
+if (process.argv.length == 3){
+	configPath = process.argv[2];
+	console.log(process.argv);
+}
+console.log(configPath);
+var config = require(configPath);
 
 // - - - - - - - - - - - - - - - - - - - - - - -
 

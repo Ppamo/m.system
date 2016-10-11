@@ -138,10 +138,10 @@ function TemplateJSON(profile) {
 	var startMock = function(){
 		// check the tls configutation
 		var tls = profile.connection.tls;
-		if (!tls.key && tls.keyPath){
+		if (tls && !tls.key && tls.keyPath){
 			tls.key = fs.readFileSync(tls.keyPath);
 		}
-		if (!tls.cert && tls.certPath){
+		if (tls && !tls.cert && tls.certPath){
 			tls.cert = fs.readFileSync(tls.certPath);
 		}
 
@@ -195,6 +195,7 @@ function TemplateJSON(profile) {
 	var loadPlayerRules = function(){
 		// load json from dump file
 		var dump, dumpPath;
+		if (!profile.rules) profile.rules = {};
 		profile.rules.play = [];
 		profile.currentCounter = 1;
 		tools.Utils.debug(profile, "loading rules from stage", profile.stage);
