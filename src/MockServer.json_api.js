@@ -4,7 +4,7 @@ function TemplateJSON(profile) {
 	var fs = require("fs");
 	var tools = require("./MockServerUtil.js");
 	var Hapi = require("hapi");
-	var http = require("http");
+	var service =  (profile.server.protocol == "https:") ? require("https") : require("http");
 	var mock = new Hapi.Server();
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -63,8 +63,10 @@ function TemplateJSON(profile) {
 		var options = {
 			host: profile.server.host,
 			port: profile.server.port,
+			protocol: profile.server.protocol,
 			path: request.path,
-			method: request.method
+			method: request.method,
+			rejectUnauthorized: false
 		};
 		var callback = function(response) {
 				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
@@ -84,7 +86,11 @@ function TemplateJSON(profile) {
 				tools.Utils.dumpJsonResponse(profile, dump);
 			};
 		// make the fuking request!
-		http.request(options, callback).end();
+		service.request(options, callback)
+			.on("error", function(e){
+						tools.Utils.error(profile, "Error on request", e);
+					})
+			.end();
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
