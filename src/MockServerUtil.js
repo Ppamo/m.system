@@ -83,7 +83,7 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var validateMode = function(mode){
-		var modes = ['play', 'record', 'static'];
+		var modes = ['play', 'record', 'static', 'proxy'];
 		return (modes.indexOf(mode) != -1);
 	};
 

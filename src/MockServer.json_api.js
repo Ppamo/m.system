@@ -45,20 +45,22 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var requestRecorder = function(request, reply){
-		tools.Utils.debug(profile, "recording",
+		tools.Utils.debug(profile, profile.mode + "ing",
 				request.method.toUpperCase(), request.path);
 		profile.currentCounter++;
 		var headers = [];
 		for (var key in request.headers){
 				headers.push({key: request.headers[key]});
 		}
-		var dump = {
-			path: request.path,
-			method: request.method,
-			headers: headers,
-			payload: request.payload
-		};
-		tools.Utils.dumpJsonRequest(profile, dump);
+		if (profile.mode == "record"){
+			var dump = {
+				path: request.path,
+				method: request.method,
+				headers: headers,
+				payload: request.payload
+			};
+			tools.Utils.dumpJsonRequest(profile, dump);
+		}
 		// get response from real server
 		var options = {
 			host: profile.server.host,
@@ -69,26 +71,31 @@ function TemplateJSON(profile) {
 			rejectUnauthorized: false
 		};
 		var callback = function(response) {
-				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
-				ws.on("finish", function(){
-						reply(fs.readFileSync(ws.path));
-					});
-				response.pipe(ws);
-				// save the response's centextual data
-				var headers = [];
-				for (var key in response.headers){
-					headers.push({key: key, value: response.headers[key]});
+				if (profile.mode == "record"){
+					var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
+					ws.on("finish", function(){
+							reply(fs.readFileSync(ws.path));
+						});
+					response.pipe(ws);
+					// save the response's centextual data
+					var headers = [];
+					for (var key in response.headers){
+						headers.push({key: key, value: response.headers[key]});
+					}
+					var dump = {
+						headers: headers,
+						statusCode: response.statusCode
+					};
+					tools.Utils.dumpJsonResponse(profile, dump);
+				} else {
+					reply(response);
 				}
-				var dump = {
-					headers: headers,
-					statusCode: response.statusCode
-				};
-				tools.Utils.dumpJsonResponse(profile, dump);
 			};
-		// make the fuking request!
+		// make the request!
 		service.request(options, callback)
 			.on("error", function(e){
 						tools.Utils.error(profile, "Error on request", e);
+						reply();
 					})
 			.end();
 	}
@@ -188,7 +195,7 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var setRecordingRule = function(){
-		tools.Utils.debug(profile, "setting recording rule");
+		tools.Utils.debug(profile, "setting " + profile.mode + "ing rule");
 		mock.route({
 			method: "*",
 			path: "/{path*}",
@@ -235,6 +242,7 @@ function TemplateJSON(profile) {
 					loadStaticRules();
 					break;
 				case "record":
+				case "proxy":
 					setRecordingRule();
 					break;
 				case "play":
