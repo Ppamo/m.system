@@ -21,8 +21,8 @@ function TemplateJSON(profile) {
 				request.route.method.toUpperCase(), request.route.path);
 		var rule;
 		// get the rule from the route
-		for (var i = 0, len = profile.rules.static.length; i < len; i++) {
-			rule = profile.rules.static[i];
+		for (var i = 0, len = profile.rules[profile.stage].static.length; i < len; i++) {
+			rule = profile.rules[profile.stage].static[i];
 			if (rule.method.toLowerCase() == request.route.method.toLowerCase()
 					&& rule.path == request.route.path){
 				break;
@@ -170,7 +170,7 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var loadStaticRules = function(){
-		var route, rules = profile.rules.static;
+		var route, rules = profile.rules[profile.stage].static;
 		if (!rules){
 			return;
 		}
