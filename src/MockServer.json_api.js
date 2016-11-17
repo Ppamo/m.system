@@ -71,7 +71,7 @@ function TemplateJSON(profile) {
 		var callback = function(response) {
 				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
 				ws.on("finish", function(){
-						reply(fs.readFileSync(ws.path));
+						replyFromDump(profile, reply);
 					});
 				response.pipe(ws);
 				// save the response's centextual data
@@ -90,7 +90,7 @@ function TemplateJSON(profile) {
 			.on("error", function(e){
 						tools.Utils.error(profile, "Error on request", e);
 					})
-			.end();
+			.end(JSON.stringify(request.payload));
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -111,7 +111,12 @@ function TemplateJSON(profile) {
 
 		// prepare the response
 		profile.currentCounter = rule.index;
+		replyFromDump(profile, reply);
+	}
 
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var replyFromDump = function(profile, reply){
 		// get the response body
 		var dumpPath = tools.Utils.getResponseDumpPath(profile);
 		var dump = JSON.parse(fs.readFileSync(dumpPath));
