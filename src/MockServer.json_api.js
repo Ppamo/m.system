@@ -69,11 +69,6 @@ function TemplateJSON(profile) {
 			rejectUnauthorized: false
 		};
 		var callback = function(response) {
-				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
-				ws.on("finish", function(){
-						replyFromDump(profile, reply);
-					});
-				response.pipe(ws);
 				// save the response's centextual data
 				var headers = [];
 				for (var key in response.headers){
@@ -84,6 +79,12 @@ function TemplateJSON(profile) {
 					statusCode: response.statusCode
 				};
 				tools.Utils.dumpJsonResponse(profile, dump);
+				// save the response body
+				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
+				ws.on("finish", function(){
+						replyFromDump(profile, reply);
+					});
+				response.pipe(ws);
 			};
 		// make the fuking request!
 		service.request(options, callback)
@@ -96,22 +97,11 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var requestPlayer = function(request, reply){
-		tools.Utils.debug(profile, "playing",
-				request.method, request.path);
-		var rule, header;
-
-		// get the index rule
-		for (var i = 0, len = profile.rules.play.length; i < len; i++) {
-			rule = profile.rules.play[i];
-			if (rule.method.toLowerCase() == request.method.toLowerCase()
-					&& rule.path == request.path){
-				break;
-			 }
-		}
+		tools.Utils.debug(profile, "playing", request.method, request.path);
 
 		// prepare the response
-		profile.currentCounter = rule.index;
 		replyFromDump(profile, reply);
+		profile.currentCounter++;
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -163,7 +153,7 @@ function TemplateJSON(profile) {
 		mock.ext("onPreResponse", require("hapi-cors-headers"));
 
 		mock.start(function (err){
-			if (err){
+			if (err) {
 				profile.error(err);
 				return;
 			};
@@ -176,7 +166,7 @@ function TemplateJSON(profile) {
 
 	var loadStaticRules = function(){
 		var route, rules = profile.rules[profile.stage].static;
-		if (!rules){
+		if (!rules) {
 			return;
 		}
 		for (var i = 0, len = rules.length; i < len; i++) {
@@ -205,28 +195,26 @@ function TemplateJSON(profile) {
 
 	var loadPlayerRules = function(){
 		// load json from dump file
-		var dump, dumpPath;
-		if (!profile.rules) profile.rules = {};
-		profile.rules.play = [];
-		profile.currentCounter = 1;
-		tools.Utils.debug(profile, "loading rules from stage", profile.stage);
-		while (tools.Utils.requestDumpExists(profile)){
-			dumpPath = tools.Utils.getRequestDumpPath(profile);
-			dump = JSON.parse(fs.readFileSync(dumpPath));
-			profile.rules.play.push({
-				index: profile.currentCounter,
-				method: dump.method,
-				path: dump.path
-			});
-			tools.Utils.debug(profile, "loading rule", profile.currentCounter,
-					dump.method, dump.path);
-			profile.currentCounter++;
+		if (!profile.rules) {
+			profile.rules = {};
 		}
-		mock.route({
-			method: "*",
-			path: "/{path*}",
-			handler: requestPlayer
-		});
+		if (mock.connections.length > 0) {
+			mock.route({
+				method: "*",
+				path: "/{path*}",
+				handler: requestPlayer
+			});
+			loadPlayRules(profile);
+		}
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var loadPlayRules = function(profile){
+		if (mock.connections.length <= 0){
+			return false;
+		}
+		profile.currentCounter = 1;
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -277,6 +265,9 @@ function TemplateJSON(profile) {
 		profile.stage = stage;
 		tools.Utils.ensurePath(profile);
 		profile.currentCounter = 0;
+		if (profile.mode == "play"){
+			loadPlayRules(profile);
+		}
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -

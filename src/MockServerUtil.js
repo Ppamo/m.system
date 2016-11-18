@@ -103,7 +103,8 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var writeStream = function(filePath, data, callback){
-		fs.writeFile(filePath, data, "utf-8", callback);
+		fs.writeFileSync(filePath, data, "utf-8");
+		callback();
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
