@@ -4,6 +4,22 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var deleteFolderRecursive = function(path) {
+		if( fs.existsSync(path) ) {
+			fs.readdirSync(path).forEach(function(file,index){
+				var curPath = path + "/" + file;
+				if(fs.lstatSync(curPath).isDirectory()) { // recurse
+					deleteFolderRecursive(curPath);
+				} else { // delete file
+					fs.unlinkSync(curPath);
+				}
+			});
+			fs.rmdirSync(path);
+		}
+	};
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	var getFilePath = function(profile, incoming){
 		if (typeof(incoming) == 'undefined'){
 			incoming = true;
@@ -186,6 +202,12 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
+	var cleanStage = function(profile){
+		deleteFolderRecursive(getWorkingPath(profile));
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
 	return {
 		isEmpty: isEmpty,
 		ensurePath: ensurePath,
@@ -203,7 +225,8 @@ var Utils = (function () {
 		getRequestDumpPath: getRequestDumpPath,
 		getResponseDumpPath: getResponseDumpPath,
 		requestDumpExists: requestDumpExists,
-		responseDumpExists: responseDumpExists
+		responseDumpExists: responseDumpExists,
+		cleanStage: cleanStage
 	};
 })();
 

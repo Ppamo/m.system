@@ -100,8 +100,8 @@ function TemplateJSON(profile) {
 		tools.Utils.debug(profile, "playing", request.method, request.path);
 
 		// prepare the response
-		replyFromDump(profile, reply);
 		profile.currentCounter++;
+		replyFromDump(profile, reply);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -204,17 +204,7 @@ function TemplateJSON(profile) {
 				path: "/{path*}",
 				handler: requestPlayer
 			});
-			loadPlayRules(profile);
 		}
-	}
-
-	// - - - - - - - - - - - - - - - - - - - - - - -
-
-	var loadPlayRules = function(profile){
-		if (mock.connections.length <= 0){
-			return false;
-		}
-		profile.currentCounter = 1;
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -223,6 +213,7 @@ function TemplateJSON(profile) {
 		tools.Utils.debug(profile, "creating", profile.type,
 				"server, at port", profile.connection.port);
 		startMock();
+		profile.currentCounter = 0;
 		switch(profile.mode){
 				case "static":
 					loadStaticRules();
@@ -263,11 +254,11 @@ function TemplateJSON(profile) {
 		}
 		tools.Utils.debug(profile, "setting stage to", stage);
 		profile.stage = stage;
+		if (profile.mode == "record"){
+			tools.Utils.cleanStage(profile);
+		}
 		tools.Utils.ensurePath(profile);
 		profile.currentCounter = 0;
-		if (profile.mode == "play"){
-			loadPlayRules(profile);
-		}
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
