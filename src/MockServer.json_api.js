@@ -61,7 +61,6 @@ function TemplateJSON(profile) {
 			headers: headers,
 			payload: request.payload
 		};
-		console.log("==> req:", dump);
 		tools.Utils.dumpJsonRequest(profile, dump);
 		// get response from real server
 		var options = {
