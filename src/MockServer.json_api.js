@@ -248,6 +248,12 @@ function TemplateJSON(profile) {
 			tools.Utils.error(profile, "Mode " + mode + "not valid", "Could not set mode");
 			return;
 		}
+		if (mode === profile.mode){
+			tools.Utils.debug(profile, "mode", mode, "already set");
+
+			return false;
+		}
+
 		tools.Utils.debug(profile, "setting mode to", mode);
 		profile.mode = mode;
 		profile.currentCounter = 0;
