@@ -6,6 +6,7 @@ function TemplateJSON(profile) {
 	var Hapi = require("hapi");
 	var service =  (profile.server.protocol == "https:") ? require("https") : require("http");
 	var mock = new Hapi.Server();
+	var headersToIgnore = ["date", "host"];
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -50,7 +51,9 @@ function TemplateJSON(profile) {
 		profile.currentCounter++;
 		var headers = [];
 		for (var key in request.headers){
-				headers.push({key: request.headers[key]});
+			if (headersToIgnore.indexOf(key) == -1){
+				headers.push({key: key, value: request.headers[key]});
+			}
 		}
 		var dump = {
 			path: request.path,
@@ -72,7 +75,9 @@ function TemplateJSON(profile) {
 				// save the response's centextual data
 				var headers = [];
 				for (var key in response.headers){
-					headers.push({key: key, value: response.headers[key]});
+					if (headersToIgnore.indexOf(key) == -1){
+						headers.push({key: key, value: response.headers[key]});
+					}
 				}
 				var dump = {
 					headers: headers,
@@ -248,6 +253,12 @@ function TemplateJSON(profile) {
 			tools.Utils.error(profile, "Mode " + mode + "not valid", "Could not set mode");
 			return;
 		}
+		if (mode === profile.mode){
+			tools.Utils.debug(profile, "mode", mode, "already set");
+
+			return false;
+		}
+
 		tools.Utils.debug(profile, "setting mode to", mode);
 		profile.mode = mode;
 		profile.currentCounter = 0;

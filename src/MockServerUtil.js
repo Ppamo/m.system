@@ -154,7 +154,7 @@ var Utils = (function () {
 			if (err) printError(profile, "could not dump request", err);
 			else printMessage(profile, "file wroted", filename);
 		};
-		writeStream(filename, JSON.stringify(data), callback);
+		writeStream(filename, JSON.stringify(data, null, 2), callback);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -165,7 +165,7 @@ var Utils = (function () {
 			if (err) printError(profile, "could not dump response", err);
 			else printMessage(profile, "file wroted", filename);
 		};
-		writeStream(filename, JSON.stringify(data), callback);
+		writeStream(filename, JSON.stringify(data, null, 2), callback);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
