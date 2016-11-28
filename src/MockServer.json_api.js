@@ -29,18 +29,10 @@ function TemplateJSON(profile) {
 				break;
 			 }
 		}
-		var replyPrefix = getReplyPathPrefix(rule.reply);
-		var output = reply(fs.readFileSync(replyPrefix + ".out"));
-		// load the headers
-		var headers = fs.readFileSync(replyPrefix + ".headers.out");
-		headers = headers.toString().split("\n");
-		for (var i = 0, len = headers.length - 1; i < len; i++) {
-			var index = headers[i].indexOf(":");
-			output.header(
-				headers[i].substring(0, index),
-				headers[i].substring(index + 1, headers[i].length));
-		}
-		return output;
+		var dumpPath = tools.Utils.getResponseDumpPath(profile, rule);
+		tools.Utils.debug(profile, "retrieving file ", dumpPath);
+		dump = JSON.parse(fs.readFileSync(dumpPath));
+		replyFromDump(profile, reply, dump);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -49,19 +41,19 @@ function TemplateJSON(profile) {
 		tools.Utils.debug(profile, "recording",
 				request.method.toUpperCase(), request.path);
 		profile.currentCounter++;
+		var dump = {};
 		var headers = [];
 		for (var key in request.headers){
 			if (headersToIgnore.indexOf(key) == -1){
 				headers.push({key: key, value: request.headers[key]});
 			}
 		}
-		var dump = {
+		dump.request = {
 			path: request.path,
 			method: request.method,
 			headers: headers,
 			payload: request.payload
 		};
-		tools.Utils.dumpJsonRequest(profile, dump);
 		// get response from real server
 		var options = {
 			host: profile.server.host,
@@ -79,17 +71,20 @@ function TemplateJSON(profile) {
 						headers.push({key: key, value: response.headers[key]});
 					}
 				}
-				var dump = {
+				dump.response = {
 					headers: headers,
 					statusCode: response.statusCode
 				};
-				tools.Utils.dumpJsonResponse(profile, dump);
 				// save the response body
-				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
-				ws.on("finish", function(){
-						replyFromDump(profile, reply);
+				var body = "";
+				response.on("data", function(data){
+						body += data.toString();
 					});
-				response.pipe(ws);
+				response.on("end", function(){
+						dump.response.body = JSON.parse(body);
+						tools.Utils.dumpJsonResponse(profile, dump);
+						replyFromDump(profile, reply, dump);
+					});
 			};
 		// make the fuking request!
 		service.request(options, callback)
@@ -106,21 +101,21 @@ function TemplateJSON(profile) {
 
 		// prepare the response
 		profile.currentCounter++;
-		replyFromDump(profile, reply);
+		var dumpPath = tools.Utils.getResponseDumpPath(profile);
+		tools.Utils.debug(profile, "retrieving file ", dumpPath);
+		dump = JSON.parse(fs.readFileSync(dumpPath));
+		replyFromDump(profile, reply, dump);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var replyFromDump = function(profile, reply){
-		// get the response body
-		var dumpPath = tools.Utils.getResponseDumpPath(profile);
-		var dump = JSON.parse(fs.readFileSync(dumpPath));
-		var replyObj = reply(tools.Utils.getResponseDumpStream(profile, false, "body"));
-		for (var i = 0, len = dump.headers.length - 1; i < len; i++) {
-			header = dump.headers[i];
+	var replyFromDump = function(profile, reply, dump){
+		var replyObj = reply(dump.response.body);
+		for (var i = 0, len = dump.response.headers.length - 1; i < len; i++) {
+			header = dump.response.headers[i];
 			replyObj.header(header.key, header.value);
 		}
-		replyObj.code(dump.statusCode);
+		replyObj.code(dump.response.statusCode);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -170,6 +165,9 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var loadStaticRules = function(){
+		if (profile.rules[profile.stage] == null){
+			return;
+		}
 		var route, rules = profile.rules[profile.stage].static;
 		if (!rules) {
 			return;

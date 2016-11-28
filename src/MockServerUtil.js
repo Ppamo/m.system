@@ -78,17 +78,10 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var ensurePath = function(profile){
-		var fillpath;
-		if (profile.mode == "static"){
-			fullpath = path.resolve(path.normalize(path.join(profile.workingDir,
-						profile.name, profile.mode, profile.stage)));
-		} else {
-			fullpath = path.resolve(path.normalize(path.join(profile.workingDir,
-						profile.name, profile.stage)));
-		}
+		var fullpath = getPath(profile);
 		var nodes = fullpath.split(path.sep);
 		fullpath = '/';
-		for (var i = 1, len = nodes.length; i < len; i++){
+		for (var i = 1, len = nodes.length - 1; i < len; i++){
 			fullpath = path.join(fullpath, nodes[i]);
 			if (!fs.existsSync(fullpath)){
 				fs.mkdirSync(fullpath);
@@ -125,10 +118,13 @@ var Utils = (function () {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var getPath = function(profile, tag, ext){
-		tag = (typeof(tag) == "undefined") ? "data" : tag.replace(/ /g, "_");
-		ext = (typeof(ext) == "undefined") ? ".dat" : ext;
-		var filename = ("0000" + profile.currentCounter).slice(-4) + "-" + tag + ext;
+	var getPath = function(profile, rule){
+		var filename;
+		if (typeof(rule) == "undefined"){
+			filename = ("0000" + profile.currentCounter).slice(-4) + ".mock";
+		} else {
+			filename = rule.reply + ".mock";
+		}
 		return path.join(getWorkingPath(profile), filename);
 	}
 
@@ -147,19 +143,26 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var getWorkingPath = function(profile){
-		return path.join(profile.workingDir, profile.name, profile.stage);
+		var mode = (profile.mode == "record") ? "play" : profile.mode;
+		return path.join(profile.workingDir, profile.name, mode, profile.stage);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var getRequestDumpPath = function(profile, tag){
-		return getPath(profile, tag, ".req");
+		return getPath(profile);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var getResponseDumpPath = function(profile, tag){
-		return getPath(profile, tag, ".res");
+	var getResponseDumpPath = function(profile, rule){
+		return getPath(profile, rule);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var getStaticResponseDumpPath = function(profile, rule){
+		return getStaticPath(profile, rule, ".mock");
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
