@@ -29,18 +29,10 @@ function TemplateJSON(profile) {
 				break;
 			 }
 		}
-		var replyPrefix = getReplyPathPrefix(rule.reply);
-		var output = reply(fs.readFileSync(replyPrefix + ".out"));
-		// load the headers
-		var headers = fs.readFileSync(replyPrefix + ".headers.out");
-		headers = headers.toString().split("\n");
-		for (var i = 0, len = headers.length - 1; i < len; i++) {
-			var index = headers[i].indexOf(":");
-			output.header(
-				headers[i].substring(0, index),
-				headers[i].substring(index + 1, headers[i].length));
-		}
-		return output;
+		var dumpPath = tools.Utils.getResponseDumpPath(profile, rule);
+		tools.Utils.debug(profile, "retrieving file ", dumpPath);
+		dump = JSON.parse(fs.readFileSync(dumpPath));
+		replyFromDump(profile, reply, dump);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
@@ -109,17 +101,15 @@ function TemplateJSON(profile) {
 
 		// prepare the response
 		profile.currentCounter++;
-		replyFromDump(profile, reply);
+		var dumpPath = tools.Utils.getResponseDumpPath(profile);
+		tools.Utils.debug(profile, "retrieving file ", dumpPath);
+		dump = JSON.parse(fs.readFileSync(dumpPath));
+		replyFromDump(profile, reply, dump);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var replyFromDump = function(profile, reply, dump){
-		if (typeof(dump) == "undefined"){
-			var dumpPath = tools.Utils.getResponseDumpPath(profile);
-			dump = JSON.parse(fs.readFileSync(dumpPath));
-		}
-		// get the response body
 		var replyObj = reply(dump.response.body);
 		for (var i = 0, len = dump.response.headers.length - 1; i < len; i++) {
 			header = dump.response.headers[i];
@@ -175,6 +165,9 @@ function TemplateJSON(profile) {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var loadStaticRules = function(){
+		if (profile.rules[profile.stage] == null){
+			return;
+		}
 		var route, rules = profile.rules[profile.stage].static;
 		if (!rules) {
 			return;
