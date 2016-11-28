@@ -49,19 +49,19 @@ function TemplateJSON(profile) {
 		tools.Utils.debug(profile, "recording",
 				request.method.toUpperCase(), request.path);
 		profile.currentCounter++;
+		var dump = {};
 		var headers = [];
 		for (var key in request.headers){
 			if (headersToIgnore.indexOf(key) == -1){
 				headers.push({key: key, value: request.headers[key]});
 			}
 		}
-		var dump = {
+		dump.request = {
 			path: request.path,
 			method: request.method,
 			headers: headers,
 			payload: request.payload
 		};
-		tools.Utils.dumpJsonRequest(profile, dump);
 		// get response from real server
 		var options = {
 			host: profile.server.host,
@@ -79,7 +79,7 @@ function TemplateJSON(profile) {
 						headers.push({key: key, value: response.headers[key]});
 					}
 				}
-				var dump = {
+				dump.response = {
 					headers: headers,
 					statusCode: response.statusCode
 				};
@@ -89,7 +89,7 @@ function TemplateJSON(profile) {
 						body += data.toString();
 					});
 				response.on("end", function(){
-						dump.body = JSON.parse(body);
+						dump.response.body = JSON.parse(body);
 						tools.Utils.dumpJsonResponse(profile, dump);
 						replyFromDump(profile, reply, dump);
 					});
@@ -120,12 +120,12 @@ function TemplateJSON(profile) {
 			dump = JSON.parse(fs.readFileSync(dumpPath));
 		}
 		// get the response body
-		var replyObj = reply(dump.body);
-		for (var i = 0, len = dump.headers.length - 1; i < len; i++) {
-			header = dump.headers[i];
+		var replyObj = reply(dump.response.body);
+		for (var i = 0, len = dump.response.headers.length - 1; i < len; i++) {
+			header = dump.response.headers[i];
 			replyObj.header(header.key, header.value);
 		}
-		replyObj.code(dump.statusCode);
+		replyObj.code(dump.response.statusCode);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -

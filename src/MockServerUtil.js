@@ -159,7 +159,7 @@ var Utils = (function () {
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
 	var getResponseDumpPath = function(profile, tag){
-		return getPath(profile, tag, ".res");
+		return getPath(profile, tag, ".mock");
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
