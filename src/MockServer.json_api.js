@@ -83,13 +83,16 @@ function TemplateJSON(profile) {
 					headers: headers,
 					statusCode: response.statusCode
 				};
-				tools.Utils.dumpJsonResponse(profile, dump);
 				// save the response body
-				var ws = tools.Utils.getResponseDumpStream(profile, true, "body");
-				ws.on("finish", function(){
-						replyFromDump(profile, reply);
+				var body = "";
+				response.on("data", function(data){
+						body += data.toString();
 					});
-				response.pipe(ws);
+				response.on("end", function(){
+						dump.body = body;
+						tools.Utils.dumpJsonResponse(profile, dump);
+						replyFromDump(profile, reply, dump);
+					});
 			};
 		// make the fuking request!
 		service.request(options, callback)
@@ -111,11 +114,13 @@ function TemplateJSON(profile) {
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
-	var replyFromDump = function(profile, reply){
+	var replyFromDump = function(profile, reply, dump){
+		if (typeof(dump) == "undefined"){
+			var dumpPath = tools.Utils.getResponseDumpPath(profile);
+			dump = JSON.parse(fs.readFileSync(dumpPath));
+		}
 		// get the response body
-		var dumpPath = tools.Utils.getResponseDumpPath(profile);
-		var dump = JSON.parse(fs.readFileSync(dumpPath));
-		var replyObj = reply(tools.Utils.getResponseDumpStream(profile, false, "body"));
+		var replyObj = reply(dump.body);
 		for (var i = 0, len = dump.headers.length - 1; i < len; i++) {
 			header = dump.headers[i];
 			replyObj.header(header.key, header.value);
