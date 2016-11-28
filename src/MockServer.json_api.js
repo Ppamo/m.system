@@ -89,7 +89,7 @@ function TemplateJSON(profile) {
 						body += data.toString();
 					});
 				response.on("end", function(){
-						dump.body = body;
+						dump.body = JSON.parse(body);
 						tools.Utils.dumpJsonResponse(profile, dump);
 						replyFromDump(profile, reply, dump);
 					});
