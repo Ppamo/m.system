@@ -1,4 +1,4 @@
-exports = module.exports = TemplateJSON;
+module.exports = TemplateJSON;
 
 function TemplateJSON(profile) {
 	var fs = require("fs");
@@ -6,7 +6,7 @@ function TemplateJSON(profile) {
 	var Hapi = require("hapi");
 	var service =  (profile.server.protocol == "https:") ? require("https") : require("http");
 	var mock = new Hapi.Server();
-	var headersToIgnore = ["date", "host"];
+	var headersToIgnore = ["date", "host", "content-length"];
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -115,7 +115,38 @@ function TemplateJSON(profile) {
 			header = dump.response.headers[i];
 			replyObj.header(header.key, header.value);
 		}
+		applyDynamicRules(profile, dump);
 		replyObj.code(dump.response.statusCode);
+	}
+
+	// - - - - - - - - - - - - - - - - - - - - - - -
+
+	var applyDynamicRules = function(profile, dump){
+		if (! profile.replacements){
+			return false;
+		}
+		var rule;
+		for (var i = 0, len = profile.replacements.length; i < len; i++) {
+			rule = profile.replacements[i];
+			if (rule.method.toLowerCase() != dump.request.method){
+				continue;
+			}
+			if (rule.path != dump.request.path){
+				continue;
+			}
+			if (! rule.stages){
+				continue;
+			}
+			if (rule.stages.indexOf(profile.stage) == -1){
+				continue;
+			}
+			tools.Utils.debug(profile, "apply replace at stage: " + profile.stage + " route: " + rule.method + " " + rule.path);
+			try{
+				eval("dump.response.body." + rule.node + " = (function(){" + rule.code + "})()")
+			} catch(e){
+				tools.Utils.error(profile, "error applying rule:", e);
+			}
+		}
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - - -
